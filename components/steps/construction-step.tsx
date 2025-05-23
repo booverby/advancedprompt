@@ -49,7 +49,6 @@ export function ConstructionStep({ analysisData, onComplete }: ConstructionStepP
   const [exampleLoaded, setExampleLoaded] = useState(false)
   const { toast } = useToast()
 
-  // Regular form
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
@@ -67,24 +66,6 @@ export function ConstructionStep({ analysisData, onComplete }: ConstructionStepP
     },
   })
 
-  // Example form with pre-loaded data
-  const exampleForm = useForm<z.infer<typeof formSchema>>({
-    resolver: zodResolver(formSchema),
-    defaultValues: {
-      prompt_architecture: hrRecruitmentTestData.construction.prompt_architecture,
-      essential_background: hrRecruitmentTestData.construction.context_engineering.essential_background,
-      industry_context: hrRecruitmentTestData.construction.context_engineering.industry_context,
-      success_framework: hrRecruitmentTestData.construction.context_engineering.success_framework,
-      error_prevention: hrRecruitmentTestData.construction.context_engineering.error_prevention,
-      command_hierarchy: hrRecruitmentTestData.construction.instruction_design.command_hierarchy,
-      quality_standards: hrRecruitmentTestData.construction.instruction_design.quality_standards,
-      format_specifications: hrRecruitmentTestData.construction.instruction_design.format_specifications,
-      validation_framework: hrRecruitmentTestData.construction.instruction_design.validation_framework,
-      workflow_logic: hrRecruitmentTestData.construction.workflow_logic,
-      prompt_template: hrRecruitmentTestData.construction.prompt_template,
-    },
-  })
-
   // Check if the analysis data matches our HR recruitment example
   const isHrRecruitmentExample = () => {
     return (
@@ -97,9 +78,50 @@ export function ConstructionStep({ analysisData, onComplete }: ConstructionStepP
   // Auto-load the HR recruitment example if the analysis data matches
   useEffect(() => {
     if (isHrRecruitmentExample()) {
-      loadHrRecruitmentExample()
+      setExampleLoaded(true)
     }
   }, [analysisData])
+
+  // Load example data when exampleLoaded state changes
+  useEffect(() => {
+    if (exampleLoaded) {
+      try {
+        const testData = hrRecruitmentTestData.construction
+
+        const exampleData = {
+          prompt_architecture: testData.prompt_architecture,
+          essential_background: testData.context_engineering.essential_background,
+          industry_context: testData.context_engineering.industry_context,
+          success_framework: testData.context_engineering.success_framework,
+          error_prevention: testData.context_engineering.error_prevention,
+          command_hierarchy: testData.instruction_design.command_hierarchy,
+          quality_standards: testData.instruction_design.quality_standards,
+          format_specifications: testData.instruction_design.format_specifications,
+          validation_framework: testData.instruction_design.validation_framework,
+          workflow_logic: testData.workflow_logic,
+          prompt_template: testData.prompt_template,
+        }
+
+        // Reset form with example data
+        form.reset(exampleData)
+
+        // Set variables
+        setVariables(testData.variables)
+
+        toast({
+          title: "Example loaded",
+          description: "HR Recruitment example data has been loaded into the construction form.",
+        })
+      } catch (error) {
+        console.error("Error loading example:", error)
+        toast({
+          variant: "destructive",
+          title: "Error loading example",
+          description: "There was a problem loading the example data. Please try again.",
+        })
+      }
+    }
+  }, [exampleLoaded, form, toast])
 
   function onSubmit(values: z.infer<typeof formSchema>) {
     if (variables.length === 0) {
@@ -140,29 +162,8 @@ export function ConstructionStep({ analysisData, onComplete }: ConstructionStepP
   }
 
   const loadHrRecruitmentExample = () => {
-    try {
-      // Toggle to use the example form
-      setExampleLoaded(true)
-
-      // Set variables
-      setVariables(hrRecruitmentTestData.construction.variables)
-
-      toast({
-        title: "Example loaded",
-        description: "HR Recruitment example data has been loaded into the construction form.",
-      })
-    } catch (error) {
-      console.error("Error loading example:", error)
-      toast({
-        variant: "destructive",
-        title: "Error loading example",
-        description: "There was a problem loading the example data. Please try again.",
-      })
-    }
+    setExampleLoaded(true)
   }
-
-  // Determine which form to use based on whether example is loaded
-  const activeForm = exampleLoaded ? exampleForm : form
 
   const [newVariable, setNewVariable] = useState<Variable>({
     name: "",
@@ -256,10 +257,10 @@ export function ConstructionStep({ analysisData, onComplete }: ConstructionStepP
         </Button>
       </div>
 
-      <Form {...activeForm}>
-        <form onSubmit={activeForm.handleSubmit(onSubmit)} className="space-y-8">
+      <Form {...form}>
+        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
           <FormField
-            control={activeForm.control}
+            control={form.control}
             name="prompt_architecture"
             render={({ field }) => (
               <FormItem>
@@ -283,7 +284,7 @@ export function ConstructionStep({ analysisData, onComplete }: ConstructionStepP
             <h3 className="text-lg font-medium">Context Engineering</h3>
 
             <FormField
-              control={activeForm.control}
+              control={form.control}
               name="essential_background"
               render={({ field }) => (
                 <FormItem>
@@ -297,7 +298,7 @@ export function ConstructionStep({ analysisData, onComplete }: ConstructionStepP
             />
 
             <FormField
-              control={activeForm.control}
+              control={form.control}
               name="industry_context"
               render={({ field }) => (
                 <FormItem>
@@ -311,7 +312,7 @@ export function ConstructionStep({ analysisData, onComplete }: ConstructionStepP
             />
 
             <FormField
-              control={activeForm.control}
+              control={form.control}
               name="success_framework"
               render={({ field }) => (
                 <FormItem>
@@ -325,7 +326,7 @@ export function ConstructionStep({ analysisData, onComplete }: ConstructionStepP
             />
 
             <FormField
-              control={activeForm.control}
+              control={form.control}
               name="error_prevention"
               render={({ field }) => (
                 <FormItem>
@@ -343,7 +344,7 @@ export function ConstructionStep({ analysisData, onComplete }: ConstructionStepP
             <h3 className="text-lg font-medium">Instruction Design</h3>
 
             <FormField
-              control={activeForm.control}
+              control={form.control}
               name="command_hierarchy"
               render={({ field }) => (
                 <FormItem>
@@ -358,7 +359,7 @@ export function ConstructionStep({ analysisData, onComplete }: ConstructionStepP
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <FormField
-                control={activeForm.control}
+                control={form.control}
                 name="quality_standards"
                 render={({ field }) => (
                   <FormItem>
@@ -372,7 +373,7 @@ export function ConstructionStep({ analysisData, onComplete }: ConstructionStepP
               />
 
               <FormField
-                control={activeForm.control}
+                control={form.control}
                 name="format_specifications"
                 render={({ field }) => (
                   <FormItem>
@@ -387,7 +388,7 @@ export function ConstructionStep({ analysisData, onComplete }: ConstructionStepP
             </div>
 
             <FormField
-              control={activeForm.control}
+              control={form.control}
               name="validation_framework"
               render={({ field }) => (
                 <FormItem>
@@ -593,7 +594,7 @@ export function ConstructionStep({ analysisData, onComplete }: ConstructionStepP
 
           {analysisData.workflow_analysis.process_type !== "Single output" && (
             <FormField
-              control={activeForm.control}
+              control={form.control}
               name="workflow_logic"
               render={({ field }) => (
                 <FormItem>
@@ -611,7 +612,7 @@ export function ConstructionStep({ analysisData, onComplete }: ConstructionStepP
           )}
 
           <FormField
-            control={activeForm.control}
+            control={form.control}
             name="prompt_template"
             render={({ field }) => (
               <FormItem>

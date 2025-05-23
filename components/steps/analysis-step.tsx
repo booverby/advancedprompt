@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { useForm } from "react-hook-form"
 import * as z from "zod"
@@ -59,10 +59,9 @@ type AnalysisStepProps = {
 
 export function AnalysisStep({ onComplete }: AnalysisStepProps) {
   const [isProcessing, setIsProcessing] = useState(false)
-  const { toast } = useToast()
   const [exampleLoaded, setExampleLoaded] = useState(false)
+  const { toast } = useToast()
 
-  // Create the form with default values
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
@@ -86,30 +85,50 @@ export function AnalysisStep({ onComplete }: AnalysisStepProps) {
     },
   })
 
-  // Create a separate form with example data
-  const exampleForm = useForm<z.infer<typeof formSchema>>({
-    resolver: zodResolver(formSchema),
-    defaultValues: {
-      business_request:
-        "Create a prompt that helps HR professionals generate consistent and effective job descriptions for various roles.",
-      primary_domain: "HR",
-      complexity_level: "Moderate",
-      industry_context: hrRecruitmentTestData.analysis.domain_assessment.industry_context,
-      stakeholder_impact: hrRecruitmentTestData.analysis.domain_assessment.stakeholder_impact,
-      process_type: hrRecruitmentTestData.analysis.workflow_analysis.process_type,
-      required_steps: hrRecruitmentTestData.analysis.workflow_analysis.required_steps,
-      dependencies: hrRecruitmentTestData.analysis.workflow_analysis.dependencies,
-      decision_points: hrRecruitmentTestData.analysis.workflow_analysis.decision_points,
-      essential_knowledge: hrRecruitmentTestData.analysis.context_requirements.essential_knowledge,
-      industry_specifics: hrRecruitmentTestData.analysis.context_requirements.industry_specifics,
-      success_criteria: hrRecruitmentTestData.analysis.context_requirements.success_criteria,
-      failure_prevention: hrRecruitmentTestData.analysis.context_requirements.failure_prevention,
-      required_inputs: hrRecruitmentTestData.analysis.variable_mapping.required_inputs,
-      optional_inputs: hrRecruitmentTestData.analysis.variable_mapping.optional_inputs,
-      calculated_fields: hrRecruitmentTestData.analysis.variable_mapping.calculated_fields,
-      output_variations: hrRecruitmentTestData.analysis.variable_mapping.output_variations,
-    },
-  })
+  // Load example data when exampleLoaded state changes
+  useEffect(() => {
+    if (exampleLoaded) {
+      try {
+        const testData = hrRecruitmentTestData.analysis
+
+        const exampleData = {
+          business_request:
+            "Create a prompt that helps HR professionals generate consistent and effective job descriptions for various roles.",
+          primary_domain: testData.domain_assessment.primary_domain,
+          complexity_level: testData.domain_assessment.complexity_level,
+          industry_context: testData.domain_assessment.industry_context,
+          stakeholder_impact: testData.domain_assessment.stakeholder_impact,
+          process_type: testData.workflow_analysis.process_type,
+          required_steps: testData.workflow_analysis.required_steps,
+          dependencies: testData.workflow_analysis.dependencies,
+          decision_points: testData.workflow_analysis.decision_points,
+          essential_knowledge: testData.context_requirements.essential_knowledge,
+          industry_specifics: testData.context_requirements.industry_specifics,
+          success_criteria: testData.context_requirements.success_criteria,
+          failure_prevention: testData.context_requirements.failure_prevention,
+          required_inputs: testData.variable_mapping.required_inputs,
+          optional_inputs: testData.variable_mapping.optional_inputs,
+          calculated_fields: testData.variable_mapping.calculated_fields,
+          output_variations: testData.variable_mapping.output_variations,
+        }
+
+        // Reset form with example data
+        form.reset(exampleData)
+
+        toast({
+          title: "Example loaded",
+          description: "HR Recruitment example data has been loaded into the form.",
+        })
+      } catch (error) {
+        console.error("Error loading example:", error)
+        toast({
+          variant: "destructive",
+          title: "Error loading example",
+          description: "There was a problem loading the example data. Please try again.",
+        })
+      }
+    }
+  }, [exampleLoaded, form, toast])
 
   function onSubmit(values: z.infer<typeof formSchema>) {
     setIsProcessing(true)
@@ -169,26 +188,8 @@ export function AnalysisStep({ onComplete }: AnalysisStepProps) {
   }
 
   const loadHrRecruitmentExample = () => {
-    try {
-      // Toggle to use the example form
-      setExampleLoaded(true)
-
-      toast({
-        title: "Example loaded",
-        description: "HR Recruitment example data has been loaded into the form.",
-      })
-    } catch (error) {
-      console.error("Error loading example:", error)
-      toast({
-        variant: "destructive",
-        title: "Error loading example",
-        description: "There was a problem loading the example data. Please try again.",
-      })
-    }
+    setExampleLoaded(true)
   }
-
-  // Determine which form to use based on whether example is loaded
-  const activeForm = exampleLoaded ? exampleForm : form
 
   return (
     <div className="space-y-8">
@@ -199,10 +200,10 @@ export function AnalysisStep({ onComplete }: AnalysisStepProps) {
         </Button>
       </div>
 
-      <Form {...activeForm}>
-        <form onSubmit={activeForm.handleSubmit(onSubmit)} className="space-y-8">
+      <Form {...form}>
+        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
           <FormField
-            control={activeForm.control}
+            control={form.control}
             name="business_request"
             render={({ field }) => (
               <FormItem>
@@ -220,7 +221,7 @@ export function AnalysisStep({ onComplete }: AnalysisStepProps) {
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <FormField
-              control={activeForm.control}
+              control={form.control}
               name="primary_domain"
               render={({ field }) => (
                 <FormItem>
@@ -248,7 +249,7 @@ export function AnalysisStep({ onComplete }: AnalysisStepProps) {
             />
 
             <FormField
-              control={activeForm.control}
+              control={form.control}
               name="complexity_level"
               render={({ field }) => (
                 <FormItem>
@@ -272,7 +273,7 @@ export function AnalysisStep({ onComplete }: AnalysisStepProps) {
           </div>
 
           <FormField
-            control={activeForm.control}
+            control={form.control}
             name="industry_context"
             render={({ field }) => (
               <FormItem>
@@ -289,7 +290,7 @@ export function AnalysisStep({ onComplete }: AnalysisStepProps) {
           />
 
           <FormField
-            control={activeForm.control}
+            control={form.control}
             name="stakeholder_impact"
             render={({ field }) => (
               <FormItem>
@@ -304,7 +305,7 @@ export function AnalysisStep({ onComplete }: AnalysisStepProps) {
           />
 
           <FormField
-            control={activeForm.control}
+            control={form.control}
             name="process_type"
             render={({ field }) => (
               <FormItem>
@@ -327,7 +328,7 @@ export function AnalysisStep({ onComplete }: AnalysisStepProps) {
           />
 
           <FormField
-            control={activeForm.control}
+            control={form.control}
             name="required_steps"
             render={({ field }) => (
               <FormItem>
@@ -343,7 +344,7 @@ export function AnalysisStep({ onComplete }: AnalysisStepProps) {
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <FormField
-              control={activeForm.control}
+              control={form.control}
               name="dependencies"
               render={({ field }) => (
                 <FormItem>
@@ -357,7 +358,7 @@ export function AnalysisStep({ onComplete }: AnalysisStepProps) {
             />
 
             <FormField
-              control={activeForm.control}
+              control={form.control}
               name="decision_points"
               render={({ field }) => (
                 <FormItem>
@@ -372,7 +373,7 @@ export function AnalysisStep({ onComplete }: AnalysisStepProps) {
           </div>
 
           <FormField
-            control={activeForm.control}
+            control={form.control}
             name="essential_knowledge"
             render={({ field }) => (
               <FormItem>
@@ -387,7 +388,7 @@ export function AnalysisStep({ onComplete }: AnalysisStepProps) {
           />
 
           <FormField
-            control={activeForm.control}
+            control={form.control}
             name="industry_specifics"
             render={({ field }) => (
               <FormItem>
@@ -401,7 +402,7 @@ export function AnalysisStep({ onComplete }: AnalysisStepProps) {
           />
 
           <FormField
-            control={activeForm.control}
+            control={form.control}
             name="success_criteria"
             render={({ field }) => (
               <FormItem>
@@ -416,7 +417,7 @@ export function AnalysisStep({ onComplete }: AnalysisStepProps) {
           />
 
           <FormField
-            control={activeForm.control}
+            control={form.control}
             name="failure_prevention"
             render={({ field }) => (
               <FormItem>
@@ -431,7 +432,7 @@ export function AnalysisStep({ onComplete }: AnalysisStepProps) {
           />
 
           <FormField
-            control={activeForm.control}
+            control={form.control}
             name="required_inputs"
             render={({ field }) => (
               <FormItem>
@@ -447,7 +448,7 @@ export function AnalysisStep({ onComplete }: AnalysisStepProps) {
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <FormField
-              control={activeForm.control}
+              control={form.control}
               name="optional_inputs"
               render={({ field }) => (
                 <FormItem>
@@ -461,7 +462,7 @@ export function AnalysisStep({ onComplete }: AnalysisStepProps) {
             />
 
             <FormField
-              control={activeForm.control}
+              control={form.control}
               name="calculated_fields"
               render={({ field }) => (
                 <FormItem>
@@ -476,7 +477,7 @@ export function AnalysisStep({ onComplete }: AnalysisStepProps) {
           </div>
 
           <FormField
-            control={activeForm.control}
+            control={form.control}
             name="output_variations"
             render={({ field }) => (
               <FormItem>
