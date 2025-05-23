@@ -50,8 +50,10 @@ type QualityStepProps = {
 export function QualityStep({ analysisData, constructionData }: QualityStepProps) {
   const [isProcessing, setIsProcessing] = useState(false)
   const [isComplete, setIsComplete] = useState(false)
+  const [exampleLoaded, setExampleLoaded] = useState(false)
   const { toast } = useToast()
 
+  // Regular form
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
@@ -64,6 +66,27 @@ export function QualityStep({ analysisData, constructionData }: QualityStepProps
       purpose: "",
       target_user: "",
       estimated_time: "",
+    },
+  })
+
+  // Example form with pre-loaded data
+  const exampleForm = useForm<z.infer<typeof formSchema>>({
+    resolver: zodResolver(formSchema),
+    defaultValues: {
+      edge_case_analysis:
+        "Tested with minimal inputs (just required fields), maximum inputs (all fields filled), and edge cases like very long text inputs.",
+      industry_compliance: "Complies with equal opportunity employment regulations and avoids discriminatory language.",
+      user_experience:
+        "Clear form fields with helpful descriptions. Generated job descriptions are well-structured and professional.",
+      optimization_protocol:
+        "Added validation for required fields, improved formatting of output, and ensured compatibility with applicant tracking systems.",
+      business_value:
+        "Saves HR professionals 30-45 minutes per job description. Ensures consistency across all job postings and improves candidate quality through better descriptions.",
+      title: "HR Job Description Generator",
+      purpose:
+        "Create professional and consistent job descriptions for various roles to streamline the recruitment process.",
+      target_user: "HR Professionals and Recruiters",
+      estimated_time: "5-10 minutes",
     },
   })
 
@@ -150,34 +173,8 @@ export function QualityStep({ analysisData, constructionData }: QualityStepProps
 
   const loadHrRecruitmentExample = () => {
     try {
-      // Set each field individually
-      form.setValue(
-        "edge_case_analysis",
-        "Tested with minimal inputs (just required fields), maximum inputs (all fields filled), and edge cases like very long text inputs.",
-      )
-      form.setValue(
-        "industry_compliance",
-        "Complies with equal opportunity employment regulations and avoids discriminatory language.",
-      )
-      form.setValue(
-        "user_experience",
-        "Clear form fields with helpful descriptions. Generated job descriptions are well-structured and professional.",
-      )
-      form.setValue(
-        "optimization_protocol",
-        "Added validation for required fields, improved formatting of output, and ensured compatibility with applicant tracking systems.",
-      )
-      form.setValue(
-        "business_value",
-        "Saves HR professionals 30-45 minutes per job description. Ensures consistency across all job postings and improves candidate quality through better descriptions.",
-      )
-      form.setValue("title", "HR Job Description Generator")
-      form.setValue(
-        "purpose",
-        "Create professional and consistent job descriptions for various roles to streamline the recruitment process.",
-      )
-      form.setValue("target_user", "HR Professionals and Recruiters")
-      form.setValue("estimated_time", "5-10 minutes")
+      // Toggle to use the example form
+      setExampleLoaded(true)
 
       toast({
         title: "Example loaded",
@@ -192,6 +189,9 @@ export function QualityStep({ analysisData, constructionData }: QualityStepProps
       })
     }
   }
+
+  // Determine which form to use based on whether example is loaded
+  const activeForm = exampleLoaded ? exampleForm : form
 
   return (
     <div className="space-y-8">
@@ -227,13 +227,13 @@ export function QualityStep({ analysisData, constructionData }: QualityStepProps
             </Button>
           </div>
 
-          <Form {...form}>
-            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
+          <Form {...activeForm}>
+            <form onSubmit={activeForm.handleSubmit(onSubmit)} className="space-y-8">
               <div className="space-y-6">
                 <h3 className="text-lg font-medium">Stress Testing</h3>
 
                 <FormField
-                  control={form.control}
+                  control={activeForm.control}
                   name="edge_case_analysis"
                   render={({ field }) => (
                     <FormItem>
@@ -248,7 +248,7 @@ export function QualityStep({ analysisData, constructionData }: QualityStepProps
                 />
 
                 <FormField
-                  control={form.control}
+                  control={activeForm.control}
                   name="industry_compliance"
                   render={({ field }) => (
                     <FormItem>
@@ -265,7 +265,7 @@ export function QualityStep({ analysisData, constructionData }: QualityStepProps
                 />
 
                 <FormField
-                  control={form.control}
+                  control={activeForm.control}
                   name="user_experience"
                   render={({ field }) => (
                     <FormItem>
@@ -281,7 +281,7 @@ export function QualityStep({ analysisData, constructionData }: QualityStepProps
               </div>
 
               <FormField
-                control={form.control}
+                control={activeForm.control}
                 name="optimization_protocol"
                 render={({ field }) => (
                   <FormItem>
@@ -296,7 +296,7 @@ export function QualityStep({ analysisData, constructionData }: QualityStepProps
               />
 
               <FormField
-                control={form.control}
+                control={activeForm.control}
                 name="business_value"
                 render={({ field }) => (
                   <FormItem>
@@ -318,7 +318,7 @@ export function QualityStep({ analysisData, constructionData }: QualityStepProps
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <FormField
-                    control={form.control}
+                    control={activeForm.control}
                     name="title"
                     render={({ field }) => (
                       <FormItem>
@@ -332,7 +332,7 @@ export function QualityStep({ analysisData, constructionData }: QualityStepProps
                   />
 
                   <FormField
-                    control={form.control}
+                    control={activeForm.control}
                     name="estimated_time"
                     render={({ field }) => (
                       <FormItem>
@@ -347,7 +347,7 @@ export function QualityStep({ analysisData, constructionData }: QualityStepProps
                 </div>
 
                 <FormField
-                  control={form.control}
+                  control={activeForm.control}
                   name="purpose"
                   render={({ field }) => (
                     <FormItem>
@@ -361,7 +361,7 @@ export function QualityStep({ analysisData, constructionData }: QualityStepProps
                 />
 
                 <FormField
-                  control={form.control}
+                  control={activeForm.control}
                   name="target_user"
                   render={({ field }) => (
                     <FormItem>

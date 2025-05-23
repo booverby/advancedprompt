@@ -46,8 +46,10 @@ type ConstructionStepProps = {
 export function ConstructionStep({ analysisData, onComplete }: ConstructionStepProps) {
   const [isProcessing, setIsProcessing] = useState(false)
   const [variables, setVariables] = useState<Variable[]>([])
+  const [exampleLoaded, setExampleLoaded] = useState(false)
   const { toast } = useToast()
 
+  // Regular form
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
@@ -62,6 +64,24 @@ export function ConstructionStep({ analysisData, onComplete }: ConstructionStepP
       validation_framework: "",
       workflow_logic: "",
       prompt_template: "",
+    },
+  })
+
+  // Example form with pre-loaded data
+  const exampleForm = useForm<z.infer<typeof formSchema>>({
+    resolver: zodResolver(formSchema),
+    defaultValues: {
+      prompt_architecture: hrRecruitmentTestData.construction.prompt_architecture,
+      essential_background: hrRecruitmentTestData.construction.context_engineering.essential_background,
+      industry_context: hrRecruitmentTestData.construction.context_engineering.industry_context,
+      success_framework: hrRecruitmentTestData.construction.context_engineering.success_framework,
+      error_prevention: hrRecruitmentTestData.construction.context_engineering.error_prevention,
+      command_hierarchy: hrRecruitmentTestData.construction.instruction_design.command_hierarchy,
+      quality_standards: hrRecruitmentTestData.construction.instruction_design.quality_standards,
+      format_specifications: hrRecruitmentTestData.construction.instruction_design.format_specifications,
+      validation_framework: hrRecruitmentTestData.construction.instruction_design.validation_framework,
+      workflow_logic: hrRecruitmentTestData.construction.workflow_logic,
+      prompt_template: hrRecruitmentTestData.construction.prompt_template,
     },
   })
 
@@ -121,23 +141,11 @@ export function ConstructionStep({ analysisData, onComplete }: ConstructionStepP
 
   const loadHrRecruitmentExample = () => {
     try {
-      const testData = hrRecruitmentTestData.construction
-
-      // Set each field individually
-      form.setValue("prompt_architecture", testData.prompt_architecture)
-      form.setValue("essential_background", testData.context_engineering.essential_background)
-      form.setValue("industry_context", testData.context_engineering.industry_context)
-      form.setValue("success_framework", testData.context_engineering.success_framework)
-      form.setValue("error_prevention", testData.context_engineering.error_prevention)
-      form.setValue("command_hierarchy", testData.instruction_design.command_hierarchy)
-      form.setValue("quality_standards", testData.instruction_design.quality_standards)
-      form.setValue("format_specifications", testData.instruction_design.format_specifications)
-      form.setValue("validation_framework", testData.instruction_design.validation_framework)
-      form.setValue("workflow_logic", testData.workflow_logic)
-      form.setValue("prompt_template", testData.prompt_template)
+      // Toggle to use the example form
+      setExampleLoaded(true)
 
       // Set variables
-      setVariables(testData.variables)
+      setVariables(hrRecruitmentTestData.construction.variables)
 
       toast({
         title: "Example loaded",
@@ -152,6 +160,9 @@ export function ConstructionStep({ analysisData, onComplete }: ConstructionStepP
       })
     }
   }
+
+  // Determine which form to use based on whether example is loaded
+  const activeForm = exampleLoaded ? exampleForm : form
 
   const [newVariable, setNewVariable] = useState<Variable>({
     name: "",
@@ -245,10 +256,10 @@ export function ConstructionStep({ analysisData, onComplete }: ConstructionStepP
         </Button>
       </div>
 
-      <Form {...form}>
-        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
+      <Form {...activeForm}>
+        <form onSubmit={activeForm.handleSubmit(onSubmit)} className="space-y-8">
           <FormField
-            control={form.control}
+            control={activeForm.control}
             name="prompt_architecture"
             render={({ field }) => (
               <FormItem>
@@ -272,7 +283,7 @@ export function ConstructionStep({ analysisData, onComplete }: ConstructionStepP
             <h3 className="text-lg font-medium">Context Engineering</h3>
 
             <FormField
-              control={form.control}
+              control={activeForm.control}
               name="essential_background"
               render={({ field }) => (
                 <FormItem>
@@ -286,7 +297,7 @@ export function ConstructionStep({ analysisData, onComplete }: ConstructionStepP
             />
 
             <FormField
-              control={form.control}
+              control={activeForm.control}
               name="industry_context"
               render={({ field }) => (
                 <FormItem>
@@ -300,7 +311,7 @@ export function ConstructionStep({ analysisData, onComplete }: ConstructionStepP
             />
 
             <FormField
-              control={form.control}
+              control={activeForm.control}
               name="success_framework"
               render={({ field }) => (
                 <FormItem>
@@ -314,7 +325,7 @@ export function ConstructionStep({ analysisData, onComplete }: ConstructionStepP
             />
 
             <FormField
-              control={form.control}
+              control={activeForm.control}
               name="error_prevention"
               render={({ field }) => (
                 <FormItem>
@@ -332,7 +343,7 @@ export function ConstructionStep({ analysisData, onComplete }: ConstructionStepP
             <h3 className="text-lg font-medium">Instruction Design</h3>
 
             <FormField
-              control={form.control}
+              control={activeForm.control}
               name="command_hierarchy"
               render={({ field }) => (
                 <FormItem>
@@ -347,7 +358,7 @@ export function ConstructionStep({ analysisData, onComplete }: ConstructionStepP
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <FormField
-                control={form.control}
+                control={activeForm.control}
                 name="quality_standards"
                 render={({ field }) => (
                   <FormItem>
@@ -361,7 +372,7 @@ export function ConstructionStep({ analysisData, onComplete }: ConstructionStepP
               />
 
               <FormField
-                control={form.control}
+                control={activeForm.control}
                 name="format_specifications"
                 render={({ field }) => (
                   <FormItem>
@@ -376,7 +387,7 @@ export function ConstructionStep({ analysisData, onComplete }: ConstructionStepP
             </div>
 
             <FormField
-              control={form.control}
+              control={activeForm.control}
               name="validation_framework"
               render={({ field }) => (
                 <FormItem>
@@ -582,7 +593,7 @@ export function ConstructionStep({ analysisData, onComplete }: ConstructionStepP
 
           {analysisData.workflow_analysis.process_type !== "Single output" && (
             <FormField
-              control={form.control}
+              control={activeForm.control}
               name="workflow_logic"
               render={({ field }) => (
                 <FormItem>
@@ -600,7 +611,7 @@ export function ConstructionStep({ analysisData, onComplete }: ConstructionStepP
           )}
 
           <FormField
-            control={form.control}
+            control={activeForm.control}
             name="prompt_template"
             render={({ field }) => (
               <FormItem>
