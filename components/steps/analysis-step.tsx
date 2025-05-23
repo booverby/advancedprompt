@@ -146,8 +146,8 @@ export function AnalysisStep({ onComplete }: AnalysisStepProps) {
       // Extract the test data
       const testData = hrRecruitmentTestData.analysis
 
-      // Use form.reset instead of individual setValue calls
-      form.reset({
+      // Create a new form state object
+      const newFormState = {
         business_request:
           "Create a prompt that helps HR professionals generate consistent and effective job descriptions for various roles.",
         primary_domain: testData.domain_assessment.primary_domain,
@@ -166,6 +166,11 @@ export function AnalysisStep({ onComplete }: AnalysisStepProps) {
         optional_inputs: testData.variable_mapping.optional_inputs,
         calculated_fields: testData.variable_mapping.calculated_fields,
         output_variations: testData.variable_mapping.output_variations,
+      }
+
+      // Set each field individually
+      Object.entries(newFormState).forEach(([key, value]) => {
+        form.setValue(key as any, value)
       })
 
       toast({
