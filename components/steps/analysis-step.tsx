@@ -142,35 +142,44 @@ export function AnalysisStep({ onComplete }: AnalysisStepProps) {
   }
 
   const loadHrRecruitmentExample = () => {
-    // Extract the test data
-    const testData = hrRecruitmentTestData.analysis
+    try {
+      // Extract the test data
+      const testData = hrRecruitmentTestData.analysis
 
-    // Map the test data to form fields
-    form.setValue(
-      "business_request",
-      "Create a prompt that helps HR professionals generate consistent and effective job descriptions for various roles.",
-    )
-    form.setValue("primary_domain", testData.domain_assessment.primary_domain)
-    form.setValue("complexity_level", testData.domain_assessment.complexity_level)
-    form.setValue("industry_context", testData.domain_assessment.industry_context)
-    form.setValue("stakeholder_impact", testData.domain_assessment.stakeholder_impact)
-    form.setValue("process_type", testData.workflow_analysis.process_type)
-    form.setValue("required_steps", testData.workflow_analysis.required_steps)
-    form.setValue("dependencies", testData.workflow_analysis.dependencies)
-    form.setValue("decision_points", testData.workflow_analysis.decision_points)
-    form.setValue("essential_knowledge", testData.context_requirements.essential_knowledge)
-    form.setValue("industry_specifics", testData.context_requirements.industry_specifics)
-    form.setValue("success_criteria", testData.context_requirements.success_criteria)
-    form.setValue("failure_prevention", testData.context_requirements.failure_prevention)
-    form.setValue("required_inputs", testData.variable_mapping.required_inputs)
-    form.setValue("optional_inputs", testData.variable_mapping.optional_inputs)
-    form.setValue("calculated_fields", testData.variable_mapping.calculated_fields)
-    form.setValue("output_variations", testData.variable_mapping.output_variations)
+      // Use form.reset instead of individual setValue calls
+      form.reset({
+        business_request:
+          "Create a prompt that helps HR professionals generate consistent and effective job descriptions for various roles.",
+        primary_domain: testData.domain_assessment.primary_domain,
+        complexity_level: testData.domain_assessment.complexity_level,
+        industry_context: testData.domain_assessment.industry_context,
+        stakeholder_impact: testData.domain_assessment.stakeholder_impact,
+        process_type: testData.workflow_analysis.process_type,
+        required_steps: testData.workflow_analysis.required_steps,
+        dependencies: testData.workflow_analysis.dependencies,
+        decision_points: testData.workflow_analysis.decision_points,
+        essential_knowledge: testData.context_requirements.essential_knowledge,
+        industry_specifics: testData.context_requirements.industry_specifics,
+        success_criteria: testData.context_requirements.success_criteria,
+        failure_prevention: testData.context_requirements.failure_prevention,
+        required_inputs: testData.variable_mapping.required_inputs,
+        optional_inputs: testData.variable_mapping.optional_inputs,
+        calculated_fields: testData.variable_mapping.calculated_fields,
+        output_variations: testData.variable_mapping.output_variations,
+      })
 
-    toast({
-      title: "Example loaded",
-      description: "HR Recruitment example data has been loaded into the form.",
-    })
+      toast({
+        title: "Example loaded",
+        description: "HR Recruitment example data has been loaded into the form.",
+      })
+    } catch (error) {
+      console.error("Error loading example:", error)
+      toast({
+        variant: "destructive",
+        title: "Error loading example",
+        description: "There was a problem loading the example data. Please try again.",
+      })
+    }
   }
 
   return (
@@ -208,7 +217,7 @@ export function AnalysisStep({ onComplete }: AnalysisStepProps) {
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Primary Business Domain</FormLabel>
-                  <Select onValueChange={field.onChange} value={field.value}>
+                  <Select onValueChange={field.onChange} value={field.value || ""}>
                     <FormControl>
                       <SelectTrigger>
                         <SelectValue placeholder="Select domain" />
@@ -236,7 +245,7 @@ export function AnalysisStep({ onComplete }: AnalysisStepProps) {
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Complexity Level</FormLabel>
-                  <Select onValueChange={field.onChange} value={field.value}>
+                  <Select onValueChange={field.onChange} value={field.value || ""}>
                     <FormControl>
                       <SelectTrigger>
                         <SelectValue placeholder="Select complexity" />
@@ -292,7 +301,7 @@ export function AnalysisStep({ onComplete }: AnalysisStepProps) {
             render={({ field }) => (
               <FormItem>
                 <FormLabel>Process Type</FormLabel>
-                <Select onValueChange={field.onChange} value={field.value}>
+                <Select onValueChange={field.onChange} value={field.value || ""}>
                   <FormControl>
                     <SelectTrigger>
                       <SelectValue placeholder="Select process type" />

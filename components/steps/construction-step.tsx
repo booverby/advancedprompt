@@ -120,28 +120,39 @@ export function ConstructionStep({ analysisData, onComplete }: ConstructionStepP
   }
 
   const loadHrRecruitmentExample = () => {
-    const testData = hrRecruitmentTestData.construction
+    try {
+      const testData = hrRecruitmentTestData.construction
 
-    // Set form values
-    form.setValue("prompt_architecture", testData.prompt_architecture)
-    form.setValue("essential_background", testData.context_engineering.essential_background)
-    form.setValue("industry_context", testData.context_engineering.industry_context)
-    form.setValue("success_framework", testData.context_engineering.success_framework)
-    form.setValue("error_prevention", testData.context_engineering.error_prevention)
-    form.setValue("command_hierarchy", testData.instruction_design.command_hierarchy)
-    form.setValue("quality_standards", testData.instruction_design.quality_standards)
-    form.setValue("format_specifications", testData.instruction_design.format_specifications)
-    form.setValue("validation_framework", testData.instruction_design.validation_framework)
-    form.setValue("workflow_logic", testData.workflow_logic)
-    form.setValue("prompt_template", testData.prompt_template)
+      // Use form.reset instead of individual setValue calls
+      form.reset({
+        prompt_architecture: testData.prompt_architecture,
+        essential_background: testData.context_engineering.essential_background,
+        industry_context: testData.context_engineering.industry_context,
+        success_framework: testData.context_engineering.success_framework,
+        error_prevention: testData.context_engineering.error_prevention,
+        command_hierarchy: testData.instruction_design.command_hierarchy,
+        quality_standards: testData.instruction_design.quality_standards,
+        format_specifications: testData.instruction_design.format_specifications,
+        validation_framework: testData.instruction_design.validation_framework,
+        workflow_logic: testData.workflow_logic,
+        prompt_template: testData.prompt_template,
+      })
 
-    // Set variables
-    setVariables(testData.variables)
+      // Set variables
+      setVariables(testData.variables)
 
-    toast({
-      title: "Example loaded",
-      description: "HR Recruitment example data has been loaded into the construction form.",
-    })
+      toast({
+        title: "Example loaded",
+        description: "HR Recruitment example data has been loaded into the construction form.",
+      })
+    } catch (error) {
+      console.error("Error loading example:", error)
+      toast({
+        variant: "destructive",
+        title: "Error loading example",
+        description: "There was a problem loading the example data. Please try again.",
+      })
+    }
   }
 
   const [newVariable, setNewVariable] = useState<Variable>({
