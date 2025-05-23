@@ -7,6 +7,7 @@ export interface Variable {
   description: string
   validation?: string
   options?: string[]
+  defaultValue?: string | number | boolean
 }
 
 export interface Workflow {
@@ -113,4 +114,13 @@ export interface QualityAssuranceData {
     complexity_level: string
     estimated_time: string
   }
+}
+
+export interface ApiError {
+  error: string
+  details?: string
+}
+
+export interface GenerateResponse {
+  text: string
 }

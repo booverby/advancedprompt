@@ -13,107 +13,168 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import type { PromptTemplate, Variable } from "@/lib/types"
 import { generateWithPrompt } from "@/lib/api"
-import { Loader2 } from "lucide-react"
+import { Loader2, Copy, AlertCircle } from "lucide-react"
 import { useToast } from "@/components/ui/use-toast"
+import { Alert, AlertDescription } from "@/components/ui/alert"
 
-export function PromptForm({ template }: { template: PromptTemplate }) {
+interface PromptFormProps {
+  template: PromptTemplate
+}
+
+export function PromptForm({ template }: PromptFormProps) {
   const [result, setResult] = useState<string>("")
   const [isLoading, setIsLoading] = useState(false)
+  const [error, setError] = useState<string>("")
   const { toast } = useToast()
 
   // Dynamically create a schema based on the template variables
   const createFormSchema = () => {
-    const schemaMap: Record<string, any> = {}
+    const schemaMap: Record<string, z.ZodTypeAny> = {}
 
     template.variables.forEach((variable) => {
-      let fieldSchema = z.string()
+      switch (variable.type) {
+        case "number":
+          let numberSchema = z.coerce.number()
+          if (variable.required) {
+            numberSchema = numberSchema.min(0, "Must be a positive number")
+          } else {
+            numberSchema = numberSchema.optional()
+          }
+          schemaMap[variable.name] = numberSchema
+          break
 
-      if (variable.required) {
-        fieldSchema = fieldSchema.min(1, { message: "This field is required" })
+        case "checkbox":
+          schemaMap[variable.name] = z.boolean().default(false)
+          break
+
+        case "select":
+          let selectSchema = z.string()
+          if (variable.options && variable.options.length > 0) {
+            selectSchema = z.enum(variable.options as [string, ...string[]])
+          }
+          if (variable.required) {
+            selectSchema = selectSchema.min(1, "Please select an option")
+          } else {
+            selectSchema = selectSchema.optional()
+          }
+          schemaMap[variable.name] = selectSchema
+          break
+
+        default: // text, textarea
+          let stringSchema = z.string()
+          if (variable.required) {
+            stringSchema = stringSchema.min(1, "This field is required")
+          } else {
+            stringSchema = stringSchema.optional()
+          }
+          schemaMap[variable.name] = stringSchema
+          break
       }
-
-      if (variable.type === "number") {
-        fieldSchema = z.coerce.number()
-        if (variable.required) {
-          fieldSchema = fieldSchema as any
-        }
-      }
-
-      if (variable.type === "checkbox") {
-        fieldSchema = z.boolean().default(false)
-      }
-
-      schemaMap[variable.name] = fieldSchema
     })
 
     return z.object(schemaMap)
   }
 
   const formSchema = createFormSchema()
+  type FormData = z.infer<typeof formSchema>
 
   // Create default values
   const defaultValues: Record<string, any> = {}
   template.variables.forEach((variable) => {
-    if (variable.type === "checkbox") {
-      defaultValues[variable.name] = false
-    } else {
-      defaultValues[variable.name] = ""
+    switch (variable.type) {
+      case "checkbox":
+        defaultValues[variable.name] = variable.defaultValue ?? false
+        break
+      case "number":
+        defaultValues[variable.name] = variable.defaultValue ?? ""
+        break
+      default:
+        defaultValues[variable.name] = variable.defaultValue ?? ""
+        break
     }
   })
 
-  const form = useForm<z.infer<typeof formSchema>>({
+  const form = useForm<FormData>({
     resolver: zodResolver(formSchema),
     defaultValues,
   })
 
-  async function onSubmit(values: z.infer<typeof formSchema>) {
+  async function onSubmit(values: FormData) {
     setIsLoading(true)
     setResult("")
+    setError("")
 
     try {
-      const generatedText = await generateWithPrompt(template, values as Record<string, string>)
+      const generatedText = await generateWithPrompt(template, values as Record<string, string | number | boolean>)
       setResult(generatedText)
     } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : "An unknown error occurred"
+      setError(errorMessage)
       toast({
         variant: "destructive",
         title: "Generation failed",
-        description: error instanceof Error ? error.message : "An unknown error occurred",
+        description: errorMessage,
       })
     } finally {
       setIsLoading(false)
     }
   }
 
+  const copyToClipboard = async () => {
+    try {
+      await navigator.clipboard.writeText(result)
+      toast({
+        title: "Copied to clipboard",
+        description: "The generated text has been copied to your clipboard.",
+      })
+    } catch (error) {
+      toast({
+        variant: "destructive",
+        title: "Copy failed",
+        description: "Failed to copy text to clipboard.",
+      })
+    }
+  }
+
   const renderFormField = (variable: Variable) => {
+    const fieldKey = `field-${variable.name}`
+
     switch (variable.type) {
       case "textarea":
         return (
           <FormField
-            key={variable.name}
+            key={fieldKey}
             control={form.control}
             name={variable.name}
             render={({ field }) => (
               <FormItem>
-                <FormLabel>{variable.label}</FormLabel>
+                <FormLabel>
+                  {variable.label}
+                  {variable.required && <span className="text-red-500 ml-1">*</span>}
+                </FormLabel>
                 <FormControl>
-                  <Textarea placeholder={variable.placeholder} {...field} />
+                  <Textarea placeholder={variable.placeholder} className="min-h-[100px]" {...field} />
                 </FormControl>
-                <FormDescription>{variable.description}</FormDescription>
+                {variable.description && <FormDescription>{variable.description}</FormDescription>}
                 <FormMessage />
               </FormItem>
             )}
           />
         )
+
       case "select":
         return (
           <FormField
-            key={variable.name}
+            key={fieldKey}
             control={form.control}
             name={variable.name}
             render={({ field }) => (
               <FormItem>
-                <FormLabel>{variable.label}</FormLabel>
-                <Select onValueChange={field.onChange} value={field.value}>
+                <FormLabel>
+                  {variable.label}
+                  {variable.required && <span className="text-red-500 ml-1">*</span>}
+                </FormLabel>
+                <Select onValueChange={field.onChange} value={field.value || ""}>
                   <FormControl>
                     <SelectTrigger>
                       <SelectValue placeholder={variable.placeholder} />
@@ -127,16 +188,17 @@ export function PromptForm({ template }: { template: PromptTemplate }) {
                     ))}
                   </SelectContent>
                 </Select>
-                <FormDescription>{variable.description}</FormDescription>
+                {variable.description && <FormDescription>{variable.description}</FormDescription>}
                 <FormMessage />
               </FormItem>
             )}
           />
         )
+
       case "checkbox":
         return (
           <FormField
-            key={variable.name}
+            key={fieldKey}
             control={form.control}
             name={variable.name}
             render={({ field }) => (
@@ -145,45 +207,56 @@ export function PromptForm({ template }: { template: PromptTemplate }) {
                   <Checkbox checked={field.value} onCheckedChange={field.onChange} />
                 </FormControl>
                 <div className="space-y-1 leading-none">
-                  <FormLabel>{variable.label}</FormLabel>
-                  <FormDescription>{variable.description}</FormDescription>
+                  <FormLabel>
+                    {variable.label}
+                    {variable.required && <span className="text-red-500 ml-1">*</span>}
+                  </FormLabel>
+                  {variable.description && <FormDescription>{variable.description}</FormDescription>}
                 </div>
                 <FormMessage />
               </FormItem>
             )}
           />
         )
+
       case "number":
         return (
           <FormField
-            key={variable.name}
+            key={fieldKey}
             control={form.control}
             name={variable.name}
             render={({ field }) => (
               <FormItem>
-                <FormLabel>{variable.label}</FormLabel>
+                <FormLabel>
+                  {variable.label}
+                  {variable.required && <span className="text-red-500 ml-1">*</span>}
+                </FormLabel>
                 <FormControl>
                   <Input type="number" placeholder={variable.placeholder} {...field} />
                 </FormControl>
-                <FormDescription>{variable.description}</FormDescription>
+                {variable.description && <FormDescription>{variable.description}</FormDescription>}
                 <FormMessage />
               </FormItem>
             )}
           />
         )
-      default:
+
+      default: // text
         return (
           <FormField
-            key={variable.name}
+            key={fieldKey}
             control={form.control}
             name={variable.name}
             render={({ field }) => (
               <FormItem>
-                <FormLabel>{variable.label}</FormLabel>
+                <FormLabel>
+                  {variable.label}
+                  {variable.required && <span className="text-red-500 ml-1">*</span>}
+                </FormLabel>
                 <FormControl>
                   <Input placeholder={variable.placeholder} {...field} />
                 </FormControl>
-                <FormDescription>{variable.description}</FormDescription>
+                {variable.description && <FormDescription>{variable.description}</FormDescription>}
                 <FormMessage />
               </FormItem>
             )}
@@ -197,19 +270,30 @@ export function PromptForm({ template }: { template: PromptTemplate }) {
       <Card>
         <CardHeader>
           <CardTitle>Fill in the prompt variables</CardTitle>
+          <p className="text-sm text-muted-foreground">
+            Complete the form below to generate content using this prompt template.
+          </p>
         </CardHeader>
         <CardContent>
+          {error && (
+            <Alert variant="destructive" className="mb-6">
+              <AlertCircle className="h-4 w-4" />
+              <AlertDescription>{error}</AlertDescription>
+            </Alert>
+          )}
+
           <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
               {template.variables.map(renderFormField)}
-              <Button type="submit" disabled={isLoading}>
+
+              <Button type="submit" disabled={isLoading} className="w-full">
                 {isLoading ? (
                   <>
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                     Generating...
                   </>
                 ) : (
-                  "Generate"
+                  "Generate Content"
                 )}
               </Button>
             </form>
@@ -223,19 +307,11 @@ export function PromptForm({ template }: { template: PromptTemplate }) {
             <CardTitle>Generated Result</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="whitespace-pre-wrap bg-muted p-4 rounded-md">{result}</div>
+            <div className="whitespace-pre-wrap bg-muted p-4 rounded-md text-sm">{result}</div>
           </CardContent>
           <CardFooter>
-            <Button
-              variant="outline"
-              onClick={() => {
-                navigator.clipboard.writeText(result)
-                toast({
-                  title: "Copied to clipboard",
-                  description: "The generated text has been copied to your clipboard.",
-                })
-              }}
-            >
+            <Button variant="outline" onClick={copyToClipboard}>
+              <Copy className="mr-2 h-4 w-4" />
               Copy to Clipboard
             </Button>
           </CardFooter>
