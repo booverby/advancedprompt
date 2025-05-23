@@ -46,8 +46,10 @@ type ConstructionStepProps = {
 export function ConstructionStep({ analysisData, onComplete }: ConstructionStepProps) {
   const [isProcessing, setIsProcessing] = useState(false)
   const [variables, setVariables] = useState<Variable[]>([])
-  const [exampleLoaded, setExampleLoaded] = useState(false)
   const { toast } = useToast()
+
+  // Create a state to store the example data
+  const [exampleData, setExampleData] = useState<z.infer<typeof formSchema> | null>(null)
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -78,50 +80,24 @@ export function ConstructionStep({ analysisData, onComplete }: ConstructionStepP
   // Auto-load the HR recruitment example if the analysis data matches
   useEffect(() => {
     if (isHrRecruitmentExample()) {
-      setExampleLoaded(true)
+      loadHrRecruitmentExample()
     }
   }, [analysisData])
 
-  // Load example data when exampleLoaded state changes
+  // Update form when example data changes
   useEffect(() => {
-    if (exampleLoaded) {
-      try {
-        const testData = hrRecruitmentTestData.construction
+    if (exampleData) {
+      // Use setValue for each field instead of reset
+      Object.entries(exampleData).forEach(([key, value]) => {
+        form.setValue(key as any, value as any)
+      })
 
-        const exampleData = {
-          prompt_architecture: testData.prompt_architecture,
-          essential_background: testData.context_engineering.essential_background,
-          industry_context: testData.context_engineering.industry_context,
-          success_framework: testData.context_engineering.success_framework,
-          error_prevention: testData.context_engineering.error_prevention,
-          command_hierarchy: testData.instruction_design.command_hierarchy,
-          quality_standards: testData.instruction_design.quality_standards,
-          format_specifications: testData.instruction_design.format_specifications,
-          validation_framework: testData.instruction_design.validation_framework,
-          workflow_logic: testData.workflow_logic,
-          prompt_template: testData.prompt_template,
-        }
-
-        // Reset form with example data
-        form.reset(exampleData)
-
-        // Set variables
-        setVariables(testData.variables)
-
-        toast({
-          title: "Example loaded",
-          description: "HR Recruitment example data has been loaded into the construction form.",
-        })
-      } catch (error) {
-        console.error("Error loading example:", error)
-        toast({
-          variant: "destructive",
-          title: "Error loading example",
-          description: "There was a problem loading the example data. Please try again.",
-        })
-      }
+      toast({
+        title: "Example loaded",
+        description: "HR Recruitment example data has been loaded into the construction form.",
+      })
     }
-  }, [exampleLoaded, form, toast])
+  }, [exampleData, form, toast])
 
   function onSubmit(values: z.infer<typeof formSchema>) {
     if (variables.length === 0) {
@@ -162,7 +138,37 @@ export function ConstructionStep({ analysisData, onComplete }: ConstructionStepP
   }
 
   const loadHrRecruitmentExample = () => {
-    setExampleLoaded(true)
+    try {
+      const testData = hrRecruitmentTestData.construction
+
+      // Create the example data object
+      const newExampleData = {
+        prompt_architecture: testData.prompt_architecture,
+        essential_background: testData.context_engineering.essential_background,
+        industry_context: testData.context_engineering.industry_context,
+        success_framework: testData.context_engineering.success_framework,
+        error_prevention: testData.context_engineering.error_prevention,
+        command_hierarchy: testData.instruction_design.command_hierarchy,
+        quality_standards: testData.instruction_design.quality_standards,
+        format_specifications: testData.instruction_design.format_specifications,
+        validation_framework: testData.instruction_design.validation_framework,
+        workflow_logic: testData.workflow_logic,
+        prompt_template: testData.prompt_template,
+      }
+
+      // Update the state with the example data
+      setExampleData(newExampleData)
+
+      // Set variables
+      setVariables(testData.variables)
+    } catch (error) {
+      console.error("Error loading example:", error)
+      toast({
+        variant: "destructive",
+        title: "Error loading example",
+        description: "There was a problem loading the example data. Please try again.",
+      })
+    }
   }
 
   const [newVariable, setNewVariable] = useState<Variable>({

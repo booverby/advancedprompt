@@ -59,8 +59,10 @@ type AnalysisStepProps = {
 
 export function AnalysisStep({ onComplete }: AnalysisStepProps) {
   const [isProcessing, setIsProcessing] = useState(false)
-  const [exampleLoaded, setExampleLoaded] = useState(false)
   const { toast } = useToast()
+
+  // Create a state to store the example data
+  const [exampleData, setExampleData] = useState<z.infer<typeof formSchema> | null>(null)
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -85,50 +87,20 @@ export function AnalysisStep({ onComplete }: AnalysisStepProps) {
     },
   })
 
-  // Load example data when exampleLoaded state changes
+  // Update form when example data changes
   useEffect(() => {
-    if (exampleLoaded) {
-      try {
-        const testData = hrRecruitmentTestData.analysis
+    if (exampleData) {
+      // Use setValue for each field instead of reset
+      Object.entries(exampleData).forEach(([key, value]) => {
+        form.setValue(key as any, value as any)
+      })
 
-        const exampleData = {
-          business_request:
-            "Create a prompt that helps HR professionals generate consistent and effective job descriptions for various roles.",
-          primary_domain: testData.domain_assessment.primary_domain,
-          complexity_level: testData.domain_assessment.complexity_level,
-          industry_context: testData.domain_assessment.industry_context,
-          stakeholder_impact: testData.domain_assessment.stakeholder_impact,
-          process_type: testData.workflow_analysis.process_type,
-          required_steps: testData.workflow_analysis.required_steps,
-          dependencies: testData.workflow_analysis.dependencies,
-          decision_points: testData.workflow_analysis.decision_points,
-          essential_knowledge: testData.context_requirements.essential_knowledge,
-          industry_specifics: testData.context_requirements.industry_specifics,
-          success_criteria: testData.context_requirements.success_criteria,
-          failure_prevention: testData.context_requirements.failure_prevention,
-          required_inputs: testData.variable_mapping.required_inputs,
-          optional_inputs: testData.variable_mapping.optional_inputs,
-          calculated_fields: testData.variable_mapping.calculated_fields,
-          output_variations: testData.variable_mapping.output_variations,
-        }
-
-        // Reset form with example data
-        form.reset(exampleData)
-
-        toast({
-          title: "Example loaded",
-          description: "HR Recruitment example data has been loaded into the form.",
-        })
-      } catch (error) {
-        console.error("Error loading example:", error)
-        toast({
-          variant: "destructive",
-          title: "Error loading example",
-          description: "There was a problem loading the example data. Please try again.",
-        })
-      }
+      toast({
+        title: "Example loaded",
+        description: "HR Recruitment example data has been loaded into the form.",
+      })
     }
-  }, [exampleLoaded, form, toast])
+  }, [exampleData, form, toast])
 
   function onSubmit(values: z.infer<typeof formSchema>) {
     setIsProcessing(true)
@@ -188,7 +160,41 @@ export function AnalysisStep({ onComplete }: AnalysisStepProps) {
   }
 
   const loadHrRecruitmentExample = () => {
-    setExampleLoaded(true)
+    try {
+      const testData = hrRecruitmentTestData.analysis
+
+      // Create the example data object
+      const newExampleData = {
+        business_request:
+          "Create a prompt that helps HR professionals generate consistent and effective job descriptions for various roles.",
+        primary_domain: testData.domain_assessment.primary_domain,
+        complexity_level: testData.domain_assessment.complexity_level,
+        industry_context: testData.domain_assessment.industry_context,
+        stakeholder_impact: testData.domain_assessment.stakeholder_impact,
+        process_type: testData.workflow_analysis.process_type,
+        required_steps: testData.workflow_analysis.required_steps,
+        dependencies: testData.workflow_analysis.dependencies,
+        decision_points: testData.workflow_analysis.decision_points,
+        essential_knowledge: testData.context_requirements.essential_knowledge,
+        industry_specifics: testData.context_requirements.industry_specifics,
+        success_criteria: testData.context_requirements.success_criteria,
+        failure_prevention: testData.context_requirements.failure_prevention,
+        required_inputs: testData.variable_mapping.required_inputs,
+        optional_inputs: testData.variable_mapping.optional_inputs,
+        calculated_fields: testData.variable_mapping.calculated_fields,
+        output_variations: testData.variable_mapping.output_variations,
+      }
+
+      // Update the state with the example data
+      setExampleData(newExampleData)
+    } catch (error) {
+      console.error("Error loading example:", error)
+      toast({
+        variant: "destructive",
+        title: "Error loading example",
+        description: "There was a problem loading the example data. Please try again.",
+      })
+    }
   }
 
   return (

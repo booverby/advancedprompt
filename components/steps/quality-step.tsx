@@ -50,8 +50,10 @@ type QualityStepProps = {
 export function QualityStep({ analysisData, constructionData }: QualityStepProps) {
   const [isProcessing, setIsProcessing] = useState(false)
   const [isComplete, setIsComplete] = useState(false)
-  const [exampleLoaded, setExampleLoaded] = useState(false)
   const { toast } = useToast()
+
+  // Create a state to store the example data
+  const [exampleData, setExampleData] = useState<z.infer<typeof formSchema> | null>(null)
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -80,49 +82,24 @@ export function QualityStep({ analysisData, constructionData }: QualityStepProps
   // Auto-load the HR recruitment example if the data matches
   useEffect(() => {
     if (isHrRecruitmentExample()) {
-      setExampleLoaded(true)
+      loadHrRecruitmentExample()
     }
   }, [analysisData, constructionData])
 
-  // Load example data when exampleLoaded state changes
+  // Update form when example data changes
   useEffect(() => {
-    if (exampleLoaded) {
-      try {
-        const exampleData = {
-          edge_case_analysis:
-            "Tested with minimal inputs (just required fields), maximum inputs (all fields filled), and edge cases like very long text inputs.",
-          industry_compliance:
-            "Complies with equal opportunity employment regulations and avoids discriminatory language.",
-          user_experience:
-            "Clear form fields with helpful descriptions. Generated job descriptions are well-structured and professional.",
-          optimization_protocol:
-            "Added validation for required fields, improved formatting of output, and ensured compatibility with applicant tracking systems.",
-          business_value:
-            "Saves HR professionals 30-45 minutes per job description. Ensures consistency across all job postings and improves candidate quality through better descriptions.",
-          title: "HR Job Description Generator",
-          purpose:
-            "Create professional and consistent job descriptions for various roles to streamline the recruitment process.",
-          target_user: "HR Professionals and Recruiters",
-          estimated_time: "5-10 minutes",
-        }
+    if (exampleData) {
+      // Use setValue for each field instead of reset
+      Object.entries(exampleData).forEach(([key, value]) => {
+        form.setValue(key as any, value as any)
+      })
 
-        // Reset form with example data
-        form.reset(exampleData)
-
-        toast({
-          title: "Example loaded",
-          description: "HR Recruitment example data has been loaded into the quality assurance form.",
-        })
-      } catch (error) {
-        console.error("Error loading example:", error)
-        toast({
-          variant: "destructive",
-          title: "Error loading example",
-          description: "There was a problem loading the example data. Please try again.",
-        })
-      }
+      toast({
+        title: "Example loaded",
+        description: "HR Recruitment example data has been loaded into the quality assurance form.",
+      })
     }
-  }, [exampleLoaded, form, toast])
+  }, [exampleData, form, toast])
 
   function onSubmit(values: z.infer<typeof formSchema>) {
     setIsProcessing(true)
@@ -190,7 +167,36 @@ export function QualityStep({ analysisData, constructionData }: QualityStepProps
   }
 
   const loadHrRecruitmentExample = () => {
-    setExampleLoaded(true)
+    try {
+      // Create the example data object
+      const newExampleData = {
+        edge_case_analysis:
+          "Tested with minimal inputs (just required fields), maximum inputs (all fields filled), and edge cases like very long text inputs.",
+        industry_compliance:
+          "Complies with equal opportunity employment regulations and avoids discriminatory language.",
+        user_experience:
+          "Clear form fields with helpful descriptions. Generated job descriptions are well-structured and professional.",
+        optimization_protocol:
+          "Added validation for required fields, improved formatting of output, and ensured compatibility with applicant tracking systems.",
+        business_value:
+          "Saves HR professionals 30-45 minutes per job description. Ensures consistency across all job postings and improves candidate quality through better descriptions.",
+        title: "HR Job Description Generator",
+        purpose:
+          "Create professional and consistent job descriptions for various roles to streamline the recruitment process.",
+        target_user: "HR Professionals and Recruiters",
+        estimated_time: "5-10 minutes",
+      }
+
+      // Update the state with the example data
+      setExampleData(newExampleData)
+    } catch (error) {
+      console.error("Error loading example:", error)
+      toast({
+        variant: "destructive",
+        title: "Error loading example",
+        description: "There was a problem loading the example data. Please try again.",
+      })
+    }
   }
 
   return (
