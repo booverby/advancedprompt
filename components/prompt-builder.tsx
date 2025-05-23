@@ -79,10 +79,12 @@ export function PromptBuilder() {
               <AnalysisStep onComplete={handleAnalysisComplete} />
             </TabsContent>
             <TabsContent value="construction">
-              <ConstructionStep analysisData={analysisData!} onComplete={handleConstructionComplete} />
+              {analysisData && <ConstructionStep analysisData={analysisData} onComplete={handleConstructionComplete} />}
             </TabsContent>
             <TabsContent value="quality">
-              <QualityStep analysisData={analysisData!} constructionData={constructionData!} />
+              {analysisData && constructionData && (
+                <QualityStep analysisData={analysisData} constructionData={constructionData} />
+              )}
             </TabsContent>
           </Tabs>
         </CardContent>
